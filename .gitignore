@@ -1,0 +1,16 @@
+# 크롬 로그인 세션 (개인 계정 쿠키) — 절대 업로드 금지
+.browser_profile/
+
+# 클라이언트 제안서 폴더 (템플릿만 공개)
+01_제안서/*
+!01_제안서/_brief_template.md
+
+# 클라이언트 문서
+00_디자인가이드/참고자료/
+
+# 로컬·임시
+__pycache__/
+*.pyc
+~$*
+.claude/settings.local.json
+Thumbs.db
