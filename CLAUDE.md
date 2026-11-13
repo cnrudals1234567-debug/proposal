@@ -1,3 +1,7 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 **모든 언어는 한국어로 답한다.** (응답·진행 보고·요약·질문·서브에이전트 지시와 보고·산출물 전부. 영어는 슬라이드 영문 병기 문구·코드 식별자·고유명사만)
 
 # 지아이코퍼레이션 광고 제안서 제작 워크스페이스
@@ -27,6 +31,27 @@ tools/
   images/ (+ credits.md)  build.py  *.pptx  preview_*/  qa_report.md
 ```
 
+## 자주 쓰는 명령 (Git Bash 기준, 제안서 폴더에서)
+```bash
+PYTHONIOENCODING=utf-8 python build_v2.py                        # PPTX 빌드 (GI_OUT=경로 로 출력 파일 지정 가능)
+PYTHONIOENCODING=utf-8 python ../../tools/check_deck.py <deck.pptx>   # 자동 검수 — FAIL 0이 통과 기준, WARN(박스 겹침)은 렌더로 눈 확인
+powershell -ExecutionPolicy Bypass -File ../../tools/render_preview.ps1 -Pptx "<절대경로.pptx>" -OutDir "<절대경로\preview_vX>"
+PYTHONIOENCODING=utf-8 python ../../tools/browse.py <URL> research/raw/<채널> --name <이름> --scroll 5   # 크롬 캡처+본문
+PYTHONIOENCODING=utf-8 python ../../tools/browse.py --login <URL>   # 로그인 세션 저장(.browser_profile/)
+```
+- `-OutDir`를 생략하면 `preview_<파일명>/`이 새로 생긴다 → 항상 `preview_vX`로 지정.
+- 렌더는 PowerPoint COM을 쓴다. 사용자가 PowerPoint로 연 파일은 덮어쓸 수 없으므로(PermissionError) 새 버전 파일명으로 빌드한다.
+
+## 빌드 구조 (여러 파일을 봐야 보이는 부분)
+- `tools/gi_pptx.py`: 회사소개서 디자인을 코드로 재현. `Deck.new_slide(theme, eyebrow)` → 배경(assets/bg_*.jpg)·eyebrow·페이지 번호 자동, `SlideCtx`가 테마 색을 맞춤. 좌표는 인치(13.333×7.5, 좌측 기준선 0.92). 이미지는 `add_image`(cover 크롭) / 캡처·증거는 `add_image_contain`(잘림 금지). Bold는 `font="Pretendard", bold=True`.
+- 제안서별 `build*.py`가 슬라이드를 직접 배치하고, **각주(`source:`)와 발표 노트(`notes:`)는 `script.md`에서 읽어 넣는다** → 문구는 script.md와 빌드 스크립트를 함께 고쳐야 원고=PPT가 유지된다. `ref:`는 원고 내부 추적용(슬라이드에 넣지 않음).
+- 매체·예산 수치의 원천은 `media_strategy*.md`(맨 위 개정 기록). script.md·PPT의 비중·일정·캠페인명은 이 문서와 일치해야 한다.
+- 버전 관리: 빌드할 때마다 `..._vX.Y.pptx`·`preview_vX.Y/`를 새로 만들고, 수정 전 script/build/media 문서는 `*_bak_*`로 백업. **사용자가 PPT를 직접 고쳤다면(파일 수정 시각 > 빌드 시각) 덮어쓰지 말고, python-pptx로 장별 텍스트를 비교해 사용자 수정을 build·script에 반영한 뒤 새 버전으로 빌드.**
+
+## 저장소(git)
+- 원격: https://github.com/cnrudals1234567-debug/proposal (공개). 커밋 작성자는 GitHub noreply 주소.
+- `.gitignore`로 클라이언트 폴더(`01_제안서/*`, 템플릿 제외), `.browser_profile/`(로그인 쿠키), `00_디자인가이드/참고자료/`(클라이언트 문서)는 올리지 않는다. 에이전트·도구·가이드 변경만 커밋한다.
+
 ## 제안서 제작 파이프라인 (서브에이전트)
 **⚠️ PPT는 사용자가 명시적으로 "PPT 만들어줘"라고 요청할 때만 만든다.** 기본은 조사 → 전략 → 원고 → 이미지 후보 → 내용 검수까지 끝내고 '내용'을 먼저 보여주는 것. 6단계(ppt-designer)는 사용자 요청 후에만 실행.
 메인 에이전트가 순서대로 호출하고, 단계마다 사용자에게 요약을 보여준다.
@@ -54,3 +79,10 @@ tools/
 - 이미지 출처·라이선스는 images/credits.md에 기록.
 - 원본 회사소개서 파일은 수정하지 않는다.
 - Python 실행 시 Windows 콘솔 한글 출력을 위해 `PYTHONIOENCODING=utf-8` 사용.
+
+## 내용 기준 (사용자 피드백으로 확정된 것)
+- 헤드라인 = 광고주가 한 번에 이해하는 **결론 문장**. 말장난·대구·은유·내부 코드(M1, N2 등) 금지. 본문·칩은 키워드 말투.
+- 진단(누수 등)은 문제 지점이 보이는 **증거 캡처(빨간 박스)** + "→ 왜 문제" 한 줄. 증거 없는 텍스트 진단 금지. 순위·노출 같은 변동 값은 단정 대신 "조회 n회·범위"로.
+- 예산 미정이면 금액 대신 **% 비중**(단계×매체×캠페인), 퍼포먼스 실행 구조(캠페인·도착지·최적화 이벤트·재배분 룰)까지.
+- 프로모션은 부가 장치보다 **후킹 → 실제 내원 연결 장치**가 핵심. 의료광고 판정은 단정 금지("GI 실무 의견 · 최종 = 심의·법률 자문").
+- 확장 제안(외국인 등) 전에 **클라이언트가 이미 하고 있는지 먼저 조회**.
